@@ -99,7 +99,7 @@ export async function POST(
 
   const isPrimary = Boolean(body.isPrimary)
 
-  const created = await prisma.$transaction(async (tx) => {
+  const created = await prisma.$transaction(async (tx: typeof prisma) => {
     if (isPrimary) {
       await tx.agentTaxonomy.updateMany({
         where: { agentId, isPrimary: true },

@@ -106,7 +106,7 @@ export async function POST(
 
   const isPrimary = Boolean(body.isPrimary)
 
-  const created = await prisma.$transaction(async (tx) => {
+  const created = await prisma.$transaction(async (tx: typeof prisma) => {
     // Only one primary offering per company. If this one is primary, demote
     // the others so we always have at most one.
     if (isPrimary) {
