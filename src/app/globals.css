@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+:root {
+  /* Primary Colors */
+  --color-primary: #1B4F72;
+  --color-primary-light: #2E86C1;
+  --color-primary-bg: #EBF5FB;
+
+  /* Accent Colors */
+  --color-accent: #E67E22;
+
+  /* Status Colors */
+  --color-success: #27AE60;
+  --color-warning: #F39C12;
+  --color-danger: #E74C3C;
+
+  /* Background & Dark */
+  --color-background: #F8FAFB;
+  --color-dark: #2C3E50;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-dark);
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+
+  &:hover {
+    color: var(--color-primary-light);
+  }
+}
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* Tailwind utilities */
+@layer components {
+  .btn-primary {
+    @apply text-white font-semibold py-2 px-4 rounded transition-colors;
+    background-color: var(--color-primary);
+  }
+
+  .btn-primary:hover {
+    background-color: var(--color-primary-light);
+  }
+
+  .btn-secondary {
+    @apply bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded transition-colors;
+  }
+
+  .btn-accent {
+    @apply text-white font-semibold py-2 px-4 rounded transition-opacity hover:opacity-90;
+    background-color: var(--color-accent);
+  }
+
+  .card {
+    @apply bg-white rounded-lg shadow p-6;
+  }
+
+  .card-bordered {
+    @apply border border-gray-200 rounded-lg p-6;
+  }
+}

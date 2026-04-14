@@ -1,0 +1,668 @@
+// Prisma Schema for The Referral Desk
+// Multi-tenant SaaS platform for restoration contractors to manage insurance agent relationships
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+/// User roles in the system - determines access and capabilities
+enum UserRole {
+  MASTER_ADMIN  // Full system access, manages everything
+  COMPANY_ADMIN // Admin for their company
+  SALES_REP    // Sales representative for a company
+  AGENT        // Insurance agent partner
+}
+
+/// Subscription tier - determines features and agent limits
+enum PlanTier {
+  FREE         // Basic tier with limited agents
+  PROFESSIONAL // Mid-tier for growing contractors
+  ENTERPRISE   // Full-featured tier with unlimited agents
+}
+
+/// Type of insurance agent
+enum AgentType {
+  CAPTIVE      // Captive agent (tied to one company)
+  INDEPENDENT  // Independent agent (can work with multiple companies)
+  BROKER       // Insurance broker
+}
+
+/// Size classification of insurance agency
+enum AgencySize {
+  SOLO         // Solo agent/operator
+  SMALL        // 2-5 agents
+  MEDIUM       // 6-20 agents
+  LARGE        // 20+ agents
+}
+
+/// Source of agent discovery
+enum AgentSource {
+  MANUAL       // Manually entered by user
+  CSV_IMPORT   // Imported from CSV file
+  API_DISCOVERY // Found via API integration
+  REFERRAL     // Referred by another agent
+}
+
+/// Pipeline stage for agent relationships
+enum PipelineStage {
+  PROSPECT           // Potential agent not yet contacted
+  FIRST_CONTACT      // Initial contact made
+  ENGAGED            // Agent showing interest
+  MEETING_SET        // Meeting scheduled
+  ACTIVE_PARTNER     // Active referral relationship
+  TOP_PRODUCER       // High-value partner
+  INACTIVE           // No longer active
+}
+
+/// Type of activity log entry
+enum ActivityType {
+  CALL                // Phone call activity
+  EMAIL               // Email sent
+  MEETING             // In-person or video meeting
+  REFERRAL_GIVEN      // Referral given to agent
+  REFERRAL_RECEIVED   // Referral received from agent
+  NOTE                // Note added
+  APPOINTMENT_SET     // Appointment scheduled
+  FOLLOW_UP           // Follow-up action
+}
+
+/// Type of outbound call
+enum CallType {
+  COLD        // Cold call to prospect
+  ORGANIC     // Call from existing relationship
+  PAST_CLIENT // Call to past client reference
+  FOLLOW_UP   // Follow-up call
+}
+
+/// Outcome of a phone call
+enum CallOutcome {
+  APPOINTMENT_SET     // Appointment scheduled
+  CALLBACK_REQUESTED  // Agent requested callback
+  LEFT_VOICEMAIL      // Voicemail left
+  NOT_INTERESTED      // Agent not interested
+  GATEKEEPER_BLOCK    // Unable to reach decision maker
+  NO_ANSWER           // No answer
+  OTHER               // Other outcome
+}
+
+/// Status of scheduled appointment
+enum AppointmentStatus {
+  SCHEDULED  // Appointment scheduled
+  CONFIRMED  // Confirmed by agent
+  COMPLETED  // Meeting completed
+  CANCELLED  // Meeting cancelled
+  NO_SHOW    // Agent did not show
+}
+
+/// Direction of referral flow
+enum ReferralDirection {
+  INBOUND  // Referral to restoration company
+  OUTBOUND // Referral from restoration company
+}
+
+/// Status of referral through lifecycle
+enum ReferralStatus {
+  RECEIVED              // Referral received
+  CONTACTED             // Customer contacted
+  INSPECTION_SCHEDULED  // Inspection scheduled
+  ESTIMATE_SENT         // Estimate sent to customer
+  APPROVED              // Estimate approved by customer
+  WORK_IN_PROGRESS      // Work started
+  COMPLETE              // Work completed
+  CANCELLED             // Referral cancelled
+}
+
+// ============================================================================
+// NEXTAUTH MODELS
+// ============================================================================
+
+/// NextAuth user account - maps external auth providers to local user
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?
+  access_token       String?
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+/// NextAuth session - tracks active user sessions
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+/// Email verification token for sign-up flow
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ============================================================================
+// USER & COMPANY MODELS
+// ============================================================================
+
+/// User account - represents a person in the system
+model User {
+  id                String   @id @default(cuid())
+  email             String   @unique
+  name              String?
+  image             String?
+  password          String?
+  role              UserRole @default(SALES_REP)
+
+  // New fields for timezone and onboarding tracking
+  timezone          String   @default("America/Chicago")
+  onboardingComplete Boolean  @default(false)
+
+  // Relations
+  companyId         String?
+  company           Company? @relation(fields: [companyId], references: [id])
+  accounts          Account[]
+  sessions          Session[]
+
+  // Activities and relationships
+  activitiesCreated Activity[]
+  callLogsCreated   CallLog[]
+  appointmentsCreated Appointment[]
+
+  // Invitations sent by this user
+  invitationsSent   Invitation[] @relation("InvitedBy")
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([companyId])
+}
+
+/// Company - represents a restoration contractor company
+model Company {
+  id                    String   @id @default(cuid())
+  name                  String
+  domain                String?
+  website               String?
+  description           String?
+  planTier              PlanTier @default(FREE)
+
+  // New fields for timezone and Stripe subscription
+  timezone              String   @default("America/Chicago")
+  stripeSubscriptionStatus String? // active, past_due, cancelled
+
+  // Relations
+  users                 User[]
+  locations             CompanyLocation[]
+  agents                Agent[]
+  agentRelations        AgentRelation[]
+  activities            Activity[]
+  callLogs              CallLog[]
+  appointments          Appointment[]
+  referrals             Referral[]
+  creditAllocations     CreditAllocation[]
+  creditUsages          CreditUsage[]
+  notifications         Notification[]
+
+  // Team invitations
+  invitations           Invitation[]
+
+  // Taxonomy — which industry/segment/role/offering(s) this company offers
+  taxonomies            CompanyTaxonomy[]
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+/// Company location - physical locations for a company
+model CompanyLocation {
+  id          String   @id @default(cuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  address     String
+  city        String
+  state       String
+  zipCode     String
+  phone       String?
+  isHeadquarters Boolean @default(false)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([companyId])
+}
+
+// ============================================================================
+// AGENT MODELS
+// ============================================================================
+
+/// Insurance agent - partner in referral relationship
+model Agent {
+  id              String        @id @default(cuid())
+  companyId       String
+  company         Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  firstName       String
+  lastName        String
+  email           String
+  phone           String?
+  agentType       AgentType
+  agencyName      String?
+  agencySize      AgencySize?
+  licenseNumber   String?
+  source          AgentSource   @default(MANUAL)
+
+  // Contact and relationship info
+  pipelineStage   PipelineStage @default(PROSPECT)
+  notes           String?
+
+  // Tracking
+  carriers        AgentCarrier[]
+  linesOfBusiness AgentLineOfBusiness[]
+  agentRelations  AgentRelation[]
+  referrals       Referral[]
+  activities      Activity[]
+
+  // Taxonomy — which offering(s) this agent places business with
+  taxonomies      AgentTaxonomy[]
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@unique([companyId, email])
+  @@index([companyId])
+  @@index([pipelineStage])
+}
+
+/// Insurance carrier represented by an agent
+model AgentCarrier {
+  id        String   @id @default(cuid())
+  agentId   String
+  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  name      String   // e.g., "State Farm", "Allstate"
+
+  createdAt DateTime @default(now())
+
+  @@unique([agentId, name])
+  @@index([agentId])
+}
+
+/// Line of business (insurance type) represented by an agent
+model AgentLineOfBusiness {
+  id        String   @id @default(cuid())
+  agentId   String
+  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  name      String   // e.g., "Homeowners", "Commercial", "Auto"
+
+  createdAt DateTime @default(now())
+
+  @@unique([agentId, name])
+  @@index([agentId])
+}
+
+// ============================================================================
+// RELATIONSHIP MODELS
+// ============================================================================
+
+/// Agent relationship - tracking key relationship metrics and details
+model AgentRelation {
+  id                String    @id @default(cuid())
+  companyId         String
+  company           Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  agentId           String
+  agent             Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  // Relationship metrics
+  referralsReceived Int       @default(0)
+  referralsGiven    Int       @default(0)
+  totalRevenue      Float     @default(0.0)
+
+  // Last interaction tracking
+  lastContactDate   DateTime?
+  nextFollowUpDate  DateTime?
+
+  // Relationship quality indicators
+  responseRate      Float?    // 0-100 percentage
+  closeRate         Float?    // 0-100 percentage
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([companyId, agentId])
+  @@index([companyId])
+  @@index([agentId])
+}
+
+// ============================================================================
+// ACTIVITY & COMMUNICATION MODELS
+// ============================================================================
+
+/// Activity log - records all interactions with agents
+model Activity {
+  id          String       @id @default(cuid())
+  companyId   String
+  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  agentId     String
+  agent       Agent        @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  createdById String
+  createdBy   User         @relation(fields: [createdById], references: [id])
+
+  type        ActivityType
+  title       String
+  description String?
+  notes       String?
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([companyId])
+  @@index([agentId])
+  @@index([createdById])
+  @@index([type])
+  @@index([createdAt])
+}
+
+/// Call log - detailed recording of phone calls with agents
+model CallLog {
+  id          String        @id @default(cuid())
+  companyId   String
+  company     Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  agentId     String
+  agent       Agent         @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  createdById String
+  createdBy   User          @relation(fields: [createdById], references: [id])
+
+  type        CallType
+  outcome     CallOutcome
+  duration    Int?          // Duration in seconds
+  transcript  String?       // Optional call transcript
+  notes       String?
+
+  // Call AI companion details
+  callId      String?       // Reference to external call recording
+  recordingUrl String?       // URL to call recording
+
+  callDate    DateTime
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([companyId])
+  @@index([agentId])
+  @@index([createdById])
+  @@index([callDate])
+}
+
+/// Appointment - scheduled meetings with agents
+model Appointment {
+  id          String              @id @default(cuid())
+  companyId   String
+  company     Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  agentId     String
+  agent       Agent               @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  createdById String
+  createdBy   User                @relation(fields: [createdById], references: [id])
+
+  title       String
+  description String?
+  location    String?
+  meetingUrl  String?             // For virtual meetings
+
+  status      AppointmentStatus   @default(SCHEDULED)
+  startTime   DateTime
+  endTime     DateTime
+
+  notes       String?
+  reminder    Boolean             @default(true)
+  reminderTime DateTime?           // When reminder was sent
+
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([companyId])
+  @@index([agentId])
+  @@index([createdById])
+  @@index([startTime])
+  @@index([status])
+}
+
+// ============================================================================
+// REFERRAL MODELS
+// ============================================================================
+
+/// Referral - tracks referrals between agents and companies
+/// NO CUSTOMER PII — only reference codes and job details
+model Referral {
+  id                  String            @id @default(cuid())
+  companyId           String
+  company             Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  agentId             String
+  agent               Agent             @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  // Referral details — NO customer PII
+  direction           ReferralDirection
+  status              ReferralStatus    @default(RECEIVED)
+  referenceCode       String            @unique @default(cuid())
+  jobType             String?           // "Roof Replacement", "Storm Damage", etc.
+  estimatedValue      Float?
+
+  // Tracking
+  receivedAt          DateTime          @default(now())
+  completedAt         DateTime?
+  statusHistory       Json?             // Array of {status, date} for timeline
+
+  // SMS confirmation flow
+  confirmationToken   String?           @unique
+  confirmedAt         DateTime?         // When recipient clicked confirm link
+
+  notes               String?           @db.Text
+
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  @@index([companyId, status])
+  @@index([agentId])
+  @@index([direction])
+  @@index([receivedAt])
+}
+
+// ============================================================================
+// CREDIT SYSTEM MODELS
+// ============================================================================
+
+/// Credit allocation - tracks credits allocated to companies
+model CreditAllocation {
+  id          String   @id @default(cuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  amount      Int      // Number of credits allocated
+  type        String   // Type of credit (e.g., "monthly_alloc", "purchase", "promo")
+  reference   String?  // Reference to Stripe transaction or promotion
+
+  expiresAt   DateTime? // When credits expire (optional)
+
+  createdAt   DateTime @default(now())
+
+  @@index([companyId])
+  @@index([expiresAt])
+}
+
+/// Credit usage - tracks when credits are consumed
+model CreditUsage {
+  id          String   @id @default(cuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  amount      Int      // Number of credits used
+  purpose     String   // What the credits were used for (e.g., "call_recording", "agent_add")
+  reference   String?  // Reference to the action that used credits
+
+  createdAt   DateTime @default(now())
+
+  @@index([companyId])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// NOTIFICATION MODELS
+// ============================================================================
+
+/// Notification - user notifications for important events
+model Notification {
+  id          String   @id @default(cuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  type        String   // Type of notification (e.g., "referral_received", "appointment_reminder")
+  title       String
+  message     String
+
+  read        Boolean  @default(false)
+  readAt      DateTime?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([read])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// INVITATION MODEL (NEW)
+// ============================================================================
+
+/// Invitation - team member invitations
+model Invitation {
+  id          String     @id @default(cuid())
+  email       String
+  role        UserRole   @default(SALES_REP)
+
+  companyId   String
+  company     Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  token       String     @unique @default(cuid())
+  invitedById String
+  invitedBy   User       @relation("InvitedBy", fields: [invitedById], references: [id])
+
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+
+  createdAt   DateTime   @default(now())
+
+  @@index([email])
+  @@index([token])
+  @@index([companyId])
+}
+
+// ============================================================================
+// TAXONOMY MODELS
+// ============================================================================
+// 4-level hierarchy:
+//   Level 1: Industry       (e.g., "Home Services")
+//   Level 2: Segment        (e.g., "Exterior")
+//   Level 3: Role           (e.g., "Roofing Contractor")
+//   Level 4: Offering/Leaf  (e.g., "Residential Roofing") ← isLeaf = true
+//
+// Assignment rule: CompanyTaxonomy and AgentTaxonomy MUST reference nodes where
+// isLeaf = true (enforced in application layer — see /api/taxonomy endpoints).
+// Option B convention: the same conceptual offering appears as distinct leaves
+// under different segments (e.g., "Residential Roofing" under both Exterior and
+// Storm Restoration), so assignments always carry the full segment context.
+
+/// Taxonomy - hierarchical categorization of industries, segments, roles, and offerings
+/// 734 total nodes: 12 industries + 58 segments + 135 roles + 529 leaves
+model Taxonomy {
+  id          String   @id
+  parentId    String?
+  parent      Taxonomy?  @relation("TaxonomyHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children    Taxonomy[] @relation("TaxonomyHierarchy")
+
+  level       Int      // 1=Industry, 2=Segment, 3=Role, 4=Offering/Leaf
+  label       String   // Display name
+  slug        String   // URL-safe identifier at this level
+  fullPath    String   // e.g., "home-services/exterior/roofing-contractor/residential-roofing"
+  industryKey String   // Top-level industry slug for fast filtering
+  isLeaf      Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  notes       String?
+
+  // Back-relations
+  companyAssignments CompanyTaxonomy[]
+  agentAssignments   AgentTaxonomy[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([parentId])
+  @@index([level])
+  @@index([industryKey])
+  @@index([isLeaf])
+  @@index([fullPath])
+}
+
+/// CompanyTaxonomy - which offering(s) a contractor company provides
+/// Must reference a Taxonomy node where isLeaf = true
+model CompanyTaxonomy {
+  id         String   @id @default(cuid())
+  companyId  String
+  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  taxonomyId String
+  taxonomy   Taxonomy @relation(fields: [taxonomyId], references: [id], onDelete: Cascade)
+
+  isPrimary  Boolean  @default(false) // Flag the company's primary offering
+  notes      String?
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([companyId, taxonomyId])
+  @@index([companyId])
+  @@index([taxonomyId])
+}
+
+/// AgentTaxonomy - which offering(s) an insurance agent places / refers business for
+/// Must reference a Taxonomy node where isLeaf = true
+model AgentTaxonomy {
+  id         String   @id @default(cuid())
+  agentId    String
+  agent      Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  taxonomyId String
+  taxonomy   Taxonomy @relation(fields: [taxonomyId], references: [id], onDelete: Cascade)
+
+  isPrimary  Boolean  @default(false) // Flag the agent's primary line
+  notes      String?
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([agentId, taxonomyId])
+  @@index([agentId])
+  @@index([taxonomyId])
+}
