@@ -1,11 +1,12 @@
 'use client'
 
+import { Suspense } from 'react'
 import { signIn } from 'next-auth/react'
 import { useSearchParams } from 'next/navigation'
 import { APP_NAME } from '@/lib/constants'
 import { AlertCircle } from 'lucide-react'
 
-export default function SignInPage() {
+function SignInContent() {
   const searchParams = useSearchParams()
   const error = searchParams.get('error')
 
@@ -90,5 +91,13 @@ export default function SignInPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense>
+      <SignInContent />
+    </Suspense>
   )
 }
