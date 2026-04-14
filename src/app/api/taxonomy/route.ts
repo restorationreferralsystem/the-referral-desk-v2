@@ -9,6 +9,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 import { auth } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
@@ -74,7 +75,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'level must be an integer in [1,4]' }, { status: 400 })
   }
 
-  const where: Record<string, unknown> = {}
+  const where: Prisma.TaxonomyWhereInput = {}
   if (industry) where.industryKey = industry
   if (level !== undefined) where.level = level
   if (leafOnly) where.isLeaf = true
