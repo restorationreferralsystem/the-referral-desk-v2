@@ -288,6 +288,8 @@ model Agent {
   agentRelations  AgentRelation[]
   referrals       Referral[]
   activities      Activity[]
+  callLogs        CallLog[]
+  appointments    Appointment[]
 
   // Taxonomy — which offering(s) this agent places business with
   taxonomies      AgentTaxonomy[]
