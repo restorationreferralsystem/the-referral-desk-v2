@@ -4,9 +4,9 @@ import { AlertCircle, CheckCircle } from 'lucide-react'
 import Link from 'next/link'
 
 interface ReferralConfirmPageProps {
-  params: {
+  params: Promise<{
     token: string
-  }
+  }>
 }
 
 async function getReferralByToken(token: string) {
@@ -34,7 +34,8 @@ async function getReferralByToken(token: string) {
 }
 
 export default async function ReferralConfirmPage({ params }: ReferralConfirmPageProps) {
-  const referral = await getReferralByToken(params.token)
+  const { token } = await params
+  const referral = await getReferralByToken(token)
 
   // Referral not found
   if (!referral) {
@@ -132,7 +133,7 @@ export default async function ReferralConfirmPage({ params }: ReferralConfirmPag
 
             <div>
               <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                Agent
+                Referral Partner
               </p>
               <p className="text-lg font-semibold text-gray-900 mt-1">
                 {referral.agent.firstName} {referral.agent.lastName}
@@ -164,13 +165,13 @@ export default async function ReferralConfirmPage({ params }: ReferralConfirmPag
                 Direction
               </p>
               <p className="text-lg font-semibold text-gray-900 mt-1">
-                {referral.direction === 'INBOUND' ? 'Agent → Contractor' : 'Contractor → Agent'}
+                {referral.direction === 'INBOUND' ? 'Partner → Contractor' : 'Contractor → Partner'}
               </p>
             </div>
           </div>
 
           {/* Confirm Button */}
-          <form action={`/api/referrals/confirm/${params.token}`} method="POST">
+          <form action={`/api/referrals/confirm/${token}`} method="POST">
             <button
               type="submit"
               className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-[#27AE60] text-white rounded-lg font-semibold hover:bg-[#229954] transition-all active:scale-95"

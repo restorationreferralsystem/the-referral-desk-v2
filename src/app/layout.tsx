@@ -11,7 +11,7 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'The Referral Desk',
   description:
-    'Restoration Referral System — Your Agent Relationship CRM',
+    'Restoration Referral System — Your Referral Partner Relationship CRM',
 }
 
 export default function RootLayout({

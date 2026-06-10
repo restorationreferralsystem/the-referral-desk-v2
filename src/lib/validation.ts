@@ -7,6 +7,58 @@ import {
   REFERRAL_STATUSES,
   USER_ROLES,
 } from './enums'
+import { PARTNER_TYPES } from './partners'
+
+// ---------------------------------------------------------------------------
+// Public signup / registration
+// ---------------------------------------------------------------------------
+
+/**
+ * Signup roles offered on the public /signup page. These map to the existing
+ * UserRole enum values — display names are partner-aware:
+ *   company_owner    → COMPANY_ADMIN
+ *   team_member      → SALES_REP
+ *   referral_partner → AGENT
+ */
+export const SIGNUP_ROLES = ['company_owner', 'team_member', 'referral_partner'] as const
+export type SignupRole = (typeof SIGNUP_ROLES)[number]
+
+const baseRegisterFields = {
+  name: z.string().min(1, 'Your name is required').max(120),
+  email: z.string().email('A valid email is required'),
+}
+
+export const registerSchema = z.discriminatedUnion('role', [
+  z.object({
+    role: z.literal('company_owner'),
+    ...baseRegisterFields,
+    companyName: z.string().min(1, 'Company name is required').max(160),
+    website: z.string().url('Enter a valid URL').optional().or(z.literal('')),
+  }),
+  z.object({
+    role: z.literal('team_member'),
+    ...baseRegisterFields,
+    // Optional invite code lets a team member join an existing company.
+    inviteCode: z.string().optional().or(z.literal('')),
+  }),
+  z.object({
+    role: z.literal('referral_partner'),
+    ...baseRegisterFields,
+    partnerType: z.enum(PARTNER_TYPES),
+    organization: z.string().max(160).optional().or(z.literal('')),
+  }),
+])
+
+export type RegisterInput = z.infer<typeof registerSchema>
+
+/** Mark the current user's onboarding as complete (and update company basics). */
+export const completeOnboardingSchema = z.object({
+  companyName: z.string().min(1).max(160).optional(),
+  website: z.string().url().optional().or(z.literal('')),
+  timezone: z.string().optional(),
+})
+
+export type CompleteOnboardingInput = z.infer<typeof completeOnboardingSchema>
 
 // Agent schemas
 export const createAgentSchema = z.object({

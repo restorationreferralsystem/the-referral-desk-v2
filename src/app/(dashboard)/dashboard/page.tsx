@@ -35,11 +35,11 @@ export default async function DashboardPage() {
 
           {/* Stat Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Total Agents */}
+            {/* Total Partners */}
             <div className="bg-white rounded-lg shadow p-6 border-l-4 border-[#1B4F72]">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-600 text-sm font-medium">Total Agents</p>
+                  <p className="text-gray-600 text-sm font-medium">Total Partners</p>
                   <p className="text-4xl font-bold text-gray-900 mt-2">—</p>
                 </div>
                 <div className="bg-blue-100 p-4 rounded-lg">
@@ -95,9 +95,9 @@ export default async function DashboardPage() {
               {user.role === 'MASTER_ADMIN'
                 ? 'As a Master Admin, you have access to manage all companies and users in the system. Start by reviewing your ecosystem or managing company accounts.'
                 : user.role === 'COMPANY_ADMIN'
-                  ? 'As a Company Admin, you can manage your team, track agents, and view analytics. Start by adding agents or inviting team members.'
+                  ? 'As a Company Admin, you can manage your team, track referral partners, and view analytics. Start by adding partners or inviting team members.'
                   : user.role === 'SALES_REP' || user.role === undefined
-                    ? 'Start by adding agents to your pipeline, logging calls, and scheduling appointments to build your referral network.'
+                    ? 'Start by adding referral partners to your pipeline, logging calls, and scheduling appointments to build your referral network.'
                     : 'You can submit referrals and view the referrals sent to you. Start by submitting your first referral.'}
             </p>
           </div>

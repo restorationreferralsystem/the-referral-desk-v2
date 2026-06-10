@@ -7,12 +7,24 @@ const publicPaths = [
   '/',
   '/auth',
   '/api/auth',
+  '/signup',
+  '/api/register',
   '/r/',
   '/portal/',
 ]
 
+// Legacy / alternate signup URLs that should land on the real /signup page.
+const signupAliases = ['/register', '/get-started', '/sign-up']
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  // Redirect alternate signup URLs to the canonical /signup page.
+  if (signupAliases.includes(pathname)) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/signup'
+    return NextResponse.redirect(url)
+  }
 
   // Check if path is public
   const isPublicPath = publicPaths.some((path) => {

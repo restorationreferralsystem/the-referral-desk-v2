@@ -9,7 +9,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { Prisma } from '@prisma/client'
+import { Prisma, type Taxonomy } from '@prisma/client'
 import { auth } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
@@ -85,7 +85,7 @@ export async function GET(req: NextRequest) {
     orderBy: [{ level: 'asc' }, { sortOrder: 'asc' }, { label: 'asc' }],
   })
 
-  const nodes: TaxonomyNode[] = rows.map((r) => ({
+  const nodes: TaxonomyNode[] = rows.map((r: Taxonomy) => ({
     id: r.id,
     parentId: r.parentId,
     level: r.level,

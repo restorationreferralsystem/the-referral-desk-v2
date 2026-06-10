@@ -12,7 +12,10 @@ const authConfig = {
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      allowDangerousEmailAccountLinking: false,
+      // Public signup pre-creates the user row, then hands off to Google OAuth.
+      // Google verifies email ownership, so linking the OAuth account to the
+      // matching pre-created user by email is safe and required for that flow.
+      allowDangerousEmailAccountLinking: true,
       authorization: {
         params: {
           access_type: 'offline',
