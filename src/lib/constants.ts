@@ -29,12 +29,15 @@ export const PIPELINE_STAGES_CONFIG = [
   { value: 'INACTIVE', label: 'Inactive', color: '#7F8C8D' },
 ] as const
 
+// Insurance-agent-specific classifications. Only surface these when the
+// partner's type is "insurance agent" (see lib/partners.ts → isInsurancePartner).
 export const AGENT_TYPES_CONFIG = [
   { value: 'CAPTIVE', label: 'Captive Agent' },
   { value: 'INDEPENDENT', label: 'Independent Agent' },
   { value: 'BROKER', label: 'Broker' },
 ] as const
 
+// Insurance-agency sizing — insurance-agent-specific (see note above).
 export const AGENCY_SIZES_CONFIG = [
   { value: 'SOLO', label: 'Solo Agent' },
   { value: 'SMALL', label: 'Small (2-5 agents)' },
@@ -78,6 +81,9 @@ export const CREDITS = {
   COST: 1, // cost per credit in cents
 } as const
 
+// One-time trial credits granted to a new company on signup
+export const TRIAL_CREDITS = 250
+
 // Subscription plans
 export const PLANS = [
   {
@@ -86,7 +92,7 @@ export const PLANS = [
     price: 0,
     credits: CREDITS.FREE,
     features: [
-      'Up to 25 agents',
+      'Up to 25 referral partners',
       'Basic pipeline tracking',
       'Email & call logging',
       'Standard support',
@@ -98,7 +104,7 @@ export const PLANS = [
     price: 49,
     credits: CREDITS.PRO,
     features: [
-      'Up to 100 agents',
+      'Up to 100 referral partners',
       'Advanced pipeline analytics',
       'AI call companion',
       'Google Calendar sync',
@@ -112,7 +118,7 @@ export const PLANS = [
     price: 149,
     credits: CREDITS.ENTERPRISE,
     features: [
-      'Unlimited agents',
+      'Unlimited referral partners',
       'Custom integrations',
       'Dedicated account manager',
       'Advanced team management',
@@ -126,7 +132,7 @@ export const PLANS = [
 export const NAV_ITEMS: Record<UserRole, Array<{ label: string; href: string; icon: string }>> = {
   SALES_REP: [
     { label: 'Dashboard', href: '/dashboard', icon: 'LayoutDashboard' },
-    { label: 'Agents', href: '/agents', icon: 'Users' },
+    { label: 'Partners', href: '/agents', icon: 'Users' },
     { label: 'Pipeline', href: '/pipeline', icon: 'TrendingUp' },
     { label: 'Calls', href: '/calls', icon: 'Phone' },
     { label: 'Appointments', href: '/appointments', icon: 'Calendar' },
@@ -134,7 +140,7 @@ export const NAV_ITEMS: Record<UserRole, Array<{ label: string; href: string; ic
   ],
   COMPANY_ADMIN: [
     { label: 'Dashboard', href: '/dashboard', icon: 'LayoutDashboard' },
-    { label: 'Agents', href: '/agents', icon: 'Users' },
+    { label: 'Partners', href: '/agents', icon: 'Users' },
     { label: 'Pipeline', href: '/pipeline', icon: 'TrendingUp' },
     { label: 'Calls', href: '/calls', icon: 'Phone' },
     { label: 'Appointments', href: '/appointments', icon: 'Calendar' },
@@ -147,7 +153,7 @@ export const NAV_ITEMS: Record<UserRole, Array<{ label: string; href: string; ic
   MASTER_ADMIN: [
     { label: 'Dashboard', href: '/dashboard', icon: 'LayoutDashboard' },
     { label: 'Companies', href: '/admin/companies', icon: 'Building2' },
-    { label: 'All Agents', href: '/admin/agents', icon: 'Users' },
+    { label: 'All Partners', href: '/admin/agents', icon: 'Users' },
     { label: 'Ecosystem', href: '/admin/ecosystem', icon: 'Globe' },
     { label: 'Settings', href: '/settings', icon: 'Settings' },
   ],
@@ -163,5 +169,5 @@ export const ROLE_DISPLAY_NAMES: Record<UserRole, string> = {
   MASTER_ADMIN: 'Master Admin',
   COMPANY_ADMIN: 'Company Admin',
   SALES_REP: 'Sales Rep',
-  AGENT: 'Agent',
+  AGENT: 'Referral Partner',
 }

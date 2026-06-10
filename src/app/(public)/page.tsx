@@ -4,12 +4,12 @@ import { ArrowRight, CheckCircle } from 'lucide-react'
 
 const FEATURES = [
   {
-    title: 'Agent CRM',
-    description: 'Manage your entire agent network in one place with detailed profiles and relationship tracking.',
+    title: 'Partner CRM',
+    description: 'Manage your entire referral partner network in one place with detailed profiles and relationship tracking.',
   },
   {
     title: 'Pipeline Tracking',
-    description: 'Visualize agent relationships through customizable pipeline stages from prospect to top producer.',
+    description: 'Visualize partner relationships through customizable pipeline stages from prospect to top producer.',
   },
   {
     title: 'AI Call Companion',
@@ -28,12 +28,20 @@ export default function LandingPage() {
       <nav className="border-b border-gray-200 sticky top-0 z-50 bg-white">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-[#1B4F72]">{APP_NAME}</h1>
-          <Link
-            href="/auth/signin"
-            className="px-6 py-2 bg-[#1B4F72] text-white rounded-lg font-medium hover:bg-[#2E86C1] transition-colors"
-          >
-            Sign In
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/auth/signin"
+              className="px-5 py-2 text-[#1B4F72] font-medium hover:text-[#2E86C1] transition-colors"
+            >
+              Sign In
+            </Link>
+            <Link
+              href="/signup"
+              className="px-6 py-2 bg-[#1B4F72] text-white rounded-lg font-medium hover:bg-[#2E86C1] transition-colors"
+            >
+              Get Started
+            </Link>
+          </div>
         </div>
       </nav>
 
@@ -41,13 +49,13 @@ export default function LandingPage() {
       <section className="py-20 px-6">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-5xl font-bold text-gray-900 mb-6">
-            Your Agent Relationship CRM
+            Your Referral Partner CRM
           </h2>
           <p className="text-xl text-gray-600 mb-8">
-            Powered by the Restoration Referral System — build stronger agent relationships and grow your referral network with proven methodology and cutting-edge technology
+            Powered by the Restoration Referral System — build stronger partner relationships and grow your referral network with proven methodology and cutting-edge technology
           </p>
           <Link
-            href="/auth/signin"
+            href="/signup"
             className="inline-flex items-center gap-2 px-8 py-4 bg-[#E67E22] text-white rounded-lg font-semibold hover:bg-[#D35400] transition-colors text-lg"
           >
             Get Started Free <ArrowRight className="w-5 h-5" />
@@ -56,7 +64,7 @@ export default function LandingPage() {
       </section>
 
       {/* Features Grid */}
-      <section className="py-20 px-6 bg-[#F8FAFB]">
+      <section id="features" className="py-20 px-6 bg-[#F8FAFB]">
         <div className="max-w-6xl mx-auto">
           <h3 className="text-3xl font-bold text-center text-gray-900 mb-12">
             Powerful Features
@@ -82,7 +90,7 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing Section */}
-      <section className="py-20 px-6">
+      <section id="pricing" className="py-20 px-6">
         <div className="max-w-6xl mx-auto">
           <h3 className="text-3xl font-bold text-center text-gray-900 mb-12">
             Choose Your Plan
@@ -106,7 +114,7 @@ export default function LandingPage() {
                   {plan.credits} credits included
                 </p>
                 <Link
-                  href="/auth/signin"
+                  href="/signup"
                   className={`block text-center py-3 rounded-lg font-semibold mb-8 transition-colors ${
                     plan.id === 'professional'
                       ? 'bg-[#E67E22] text-white hover:bg-[#D35400]'
@@ -136,30 +144,33 @@ export default function LandingPage() {
             <div>
               <h5 className="font-semibold mb-4">{APP_NAME}</h5>
               <p className="text-gray-300 text-sm">
-                Build stronger agent relationships and grow your referral network.
+                Build stronger partner relationships and grow your referral network.
               </p>
             </div>
             <div>
               <h5 className="font-semibold mb-4">Product</h5>
               <ul className="space-y-2 text-sm text-gray-300">
-                <li><Link href="#" className="hover:text-white">Features</Link></li>
-                <li><Link href="#" className="hover:text-white">Pricing</Link></li>
-                <li><Link href="#" className="hover:text-white">Integrations</Link></li>
+                <li><Link href="#features" className="hover:text-white">Features</Link></li>
+                <li><Link href="#pricing" className="hover:text-white">Pricing</Link></li>
+                <li><Link href="/signup" className="hover:text-white">Get Started</Link></li>
               </ul>
             </div>
             <div>
               <h5 className="font-semibold mb-4">Company</h5>
               <ul className="space-y-2 text-sm text-gray-300">
-                <li><Link href="#" className="hover:text-white">About</Link></li>
-                <li><Link href="#" className="hover:text-white">Blog</Link></li>
-                <li><Link href="#" className="hover:text-white">Contact</Link></li>
+                <li><Link href="/auth/signin" className="hover:text-white">Sign In</Link></li>
+                <li>
+                  <a href="mailto:matt@restorationreferralsystem.com" className="hover:text-white">
+                    Contact
+                  </a>
+                </li>
               </ul>
             </div>
             <div>
-              <h5 className="font-semibold mb-4">Legal</h5>
+              <h5 className="font-semibold mb-4">Get Started</h5>
               <ul className="space-y-2 text-sm text-gray-300">
-                <li><Link href="#" className="hover:text-white">Privacy</Link></li>
-                <li><Link href="#" className="hover:text-white">Terms</Link></li>
+                <li><Link href="/signup" className="hover:text-white">Create an account</Link></li>
+                <li><Link href="/auth/signin" className="hover:text-white">Sign in</Link></li>
               </ul>
             </div>
           </div>

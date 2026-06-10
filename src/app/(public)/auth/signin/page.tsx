@@ -1,6 +1,7 @@
 'use client'
 
 import { Suspense } from 'react'
+import Link from 'next/link'
 import { signIn } from 'next-auth/react'
 import { useSearchParams } from 'next/navigation'
 import { APP_NAME } from '@/lib/constants'
@@ -11,7 +12,7 @@ function SignInContent() {
   const error = searchParams.get('error')
 
   const errorMessages: Record<string, string> = {
-    'no-invitation': 'You need an invitation to sign up. Contact your company administrator.',
+    'no-invitation': 'We couldn\'t find an account for that email. Create an account to get started.',
     'callback': 'There was an error signing in. Please try again.',
     'oauthsignin': 'There was an error connecting to Google. Please try again.',
     'oauthcallback': 'There was an error during sign-in. Please try again.',
@@ -47,7 +48,7 @@ function SignInContent() {
           <div className="mb-8">
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Welcome back</h2>
             <p className="text-gray-600 text-sm">
-              Sign in with your Google account to access your agent network
+              Sign in with your Google account to access your partner network
             </p>
           </div>
 
@@ -77,8 +78,16 @@ function SignInContent() {
             Sign in with Google
           </button>
 
+          {/* Create account */}
+          <p className="text-sm text-center text-gray-600 mt-8">
+            New here?{' '}
+            <Link href="/signup" className="text-[#2E86C1] font-medium hover:underline">
+              Create an account
+            </Link>
+          </p>
+
           {/* Footer */}
-          <p className="text-xs text-center text-gray-500 mt-8">
+          <p className="text-xs text-center text-gray-500 mt-4">
             By signing in, you agree to our Terms of Service and Privacy Policy
           </p>
         </div>

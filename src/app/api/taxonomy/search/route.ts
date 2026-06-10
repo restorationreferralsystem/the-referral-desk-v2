@@ -14,7 +14,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { Prisma } from '@prisma/client'
+import { Prisma, type Taxonomy } from '@prisma/client'
 import { auth } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
     count: rows.length,
     query: q,
     leafOnly,
-    results: rows.map((r) => ({
+    results: rows.map((r: Taxonomy) => ({
       id: r.id,
       parentId: r.parentId,
       level: r.level,
